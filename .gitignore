@@ -1,0 +1,120 @@
+# ----------------------------------------------------------------------------
+# 操作系统缓存 & 杂项
+# ----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.log
+*.class
+*.pyc
+*.swp
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+__pycache__/
+.tags*
+
+# ----------------------------------------------------------------------------
+# IDE (VS Code, IntelliJ, etc.)
+# ----------------------------------------------------------------------------
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.settings/
+.metadata
+
+# ----------------------------------------------------------------------------
+# Flutter & Dart 相关
+# ----------------------------------------------------------------------------
+.dart_tool/
+.dev_tools/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+**/doc/api/
+.symlinks/
+
+# ----------------------------------------------------------------------------
+# Android 相关
+# ----------------------------------------------------------------------------
+android/**/generated/
+android/app/debug/
+android/app/release/
+android/app/profile/
+android/local.properties
+android/key.properties
+android/.gradle/
+**/android/app/src/main/res/raw/
+**/android/app/src/main/assets/
+**/android/app/src/main/jniLibs/
+**/android/app/src/main/libs/
+**/android/app/src/main/obj/
+**/android/app/src/main/symbols/
+**/android/app/src/main/temp/
+**/android/app/src/main/test/
+**/android/app/src/main/tmp/
+**/android/app/src/main/upload/
+**/android/app/src/main/values/
+**/android/app/src/main/xml/
+.gradle/
+captures/
+externalNativeBuild/
+gradle-wrapper.jar
+gradlew
+gradlew.bat
+*.jks
+*.keystore
+
+# ----------------------------------------------------------------------------
+# iOS & macOS 相关
+# ----------------------------------------------------------------------------
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/App.framework
+ios/Flutter/App.structurereport
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.framework
+ios/Pods/
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/.last_build_id
+**/ios/Frameworks/
+**/macos/Flutter/ephemeral/
+**/macos/Flutter/Generated.xcconfig
+**/macos/Flutter/flutter_export_environment.sh
+**/.generated/
+DerivedData/
+*.xcworkspace/
+!default.xcworkspace/
+*.moved-aside
+*.xcuserstate
+Pods/
+ServiceDevice.plist
+Podfile.lock
+xcuserdata/
+
+# ----------------------------------------------------------------------------
+# Web 相关
+# ----------------------------------------------------------------------------
+.tmp/
+node_modules/
+.node_modules/
+build/web/
+
+# ----------------------------------------------------------------------------
+# 秘密文件 & 证书
+# ----------------------------------------------------------------------------
+.env*
+!.env.example
+*.secret
+credentials.json
+*.p12
+*.key
