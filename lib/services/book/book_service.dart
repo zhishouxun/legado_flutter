@@ -13,6 +13,7 @@ import '../../data/models/book_chapter.dart';
 import '../../data/models/book_source.dart';
 import '../../data/models/book_source_rule.dart';
 import '../network/network_service.dart';
+import '../network/protocol_handler.dart';
 import '../../utils/parsers/rule_parser.dart';
 import '../../utils/parsers/html_parser.dart';
 import '../../utils/app_log.dart';
@@ -32,12 +33,49 @@ class BookService extends BaseService {
   final AppDatabase _db = AppDatabase.instance;
   final NetworkService _networkService = NetworkService.instance;
   final BookSourceService _bookSourceService = BookSourceService.instance;
+  final ProtocolHandler _protocolHandler = ProtocolHandler.instance;
 
   // 正在请求的章节（用于防止重复请求）
   // Key: 章节URL，Value: 请求的Future
   final Map<String, Future<String?>> _loadingChapters = {};
 
   BookService._init();
+
+  /// 统一的网络请求接口 (支持多协议)
+  /// 
+  /// 自动检测URL的协议类型,选择合适的处理方式:
+  /// - HTTP/HTTPS: 常规网页解析
+  /// - JSON/API: JSON响应直接解析
+  /// - WebView: 处理严格反爬网站
+  /// 
+  /// [url] 请求URL (可包含协议标记 @json, @webview)
+  /// [source] 书源配置
+  /// [method] HTTP方法 (GET/POST)
+  /// [headers] 额外的请求头
+  /// [data] POST数据
+  /// 
+  /// 返回: HTTP响应文本
+  Future<String> _request(
+    String url,
+    BookSource source, {
+    String method = 'GET',
+    Map<String, String>? headers,
+    dynamic data,
+  }) async {
+    try {
+      // 使用协议处理器自动处理不同协议类型
+      return await _protocolHandler.request(
+        url: url,
+        source: source,
+        method: method,
+        headers: headers,
+        data: data,
+      );
+    } catch (e) {
+      AppLog.instance.put('网络请求失败: $url', error: e);
+      rethrow;
+    }
+  }
 
   /// 比较两个 URL 是否相等（规范化后比较）
   /// 参考项目：NetworkUtils.getAbsoluteURL 的比较逻辑
@@ -199,16 +237,15 @@ class BookService extends BaseService {
           final fullUrl =
               NetworkService.joinUrl(source.bookSourceUrl, searchUrl);
 
-          // 发送请求
-          final response = await _networkService.get(
+          // 使用协议处理器发送请求（支持HTTP/JSON/WebView）
+          final responseText = await _request(
             fullUrl,
-            headers: NetworkService.parseHeaders(source.header),
-            retryCount: 1,
+            source,
           );
 
-          final html = await NetworkService.getResponseText(response);
+          final html = responseText;
           AppLog.instance.put(
-              '搜索响应: 状态码=${response.statusCode}, 内容长度=${html.length}, URL=$fullUrl');
+              '搜索响应: 内容长度=${html.length}, URL=$fullUrl');
 
           // 输出响应内容的前500个字符用于调试
           if (html.isNotEmpty) {
@@ -325,7 +362,7 @@ class BookService extends BaseService {
       // 使用并发限流器（参考项目：ConcurrentRateLimiter）
       final updatedBook =
           await ConcurrentRateLimiter(source).withLimit(() async {
-        // 发送请求，确保禁用缓存
+        // 发送请求,确保禁用缓存
         final headers = NetworkService.parseHeaders(source.header);
         headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
         headers['Pragma'] = 'no-cache';
@@ -335,20 +372,16 @@ class BookService extends BaseService {
         AppLog.instance
             .put('getBookInfo: 请求URL=${book.bookUrl}, 请求头数量=${headers.length}');
 
-        final response = await _networkService.get(
+        // 使用协议处理器发送请求
+        final html = await _request(
           book.bookUrl,
+          source,
           headers: headers,
-          retryCount: 1,
-          options: Options(
-            extra: {'noCache': true},
-          ),
         );
-
-        final html = await NetworkService.getResponseText(response);
 
         // 记录到 AppLog
         AppLog.instance.put(
-            'getBookInfo: 响应状态码=${response.statusCode}, 内容长度=${html.length}, URL=${book.bookUrl}');
+            'getBookInfo: 内容长度=${html.length}, URL=${book.bookUrl}');
 
         final bookInfo = await RuleParser.parseBookInfoRule(
           html,
