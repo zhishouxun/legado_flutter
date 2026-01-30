@@ -1,0 +1,155 @@
+name: legado_flutter
+description: Legado (开源阅读) Flutter 版本 - 一个免费开源的小说阅读器
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # UI 相关
+  cupertino_icons: ^1.0.6
+  material_design_icons_flutter: ^7.0.7296
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+  flutter_staggered_grid_view: ^0.7.0
+  pull_to_refresh: ^2.0.0
+  flutter_markdown: ^0.7.7+1
+  flutter_colorpicker: ^1.0.3
+  flutter_html: ^3.0.0-beta.2
+
+  # 状态管理
+  provider: ^6.1.1
+  riverpod: ^3.0.3
+  flutter_riverpod: ^3.0.3
+
+  # 数据库
+  sqflite: ^2.3.0
+  path: ^1.8.3
+
+  # 网络请求
+  dio: ^5.4.0
+  http: ^1.1.2
+  cookie_jar: ^4.0.8
+  dio_cookie_manager: ^3.0.1
+  webview_flutter: ^4.4.2
+
+  # HTML 解析
+  html: ^0.15.4
+  xpath_selector: ^3.0.2
+  xpath_selector_html_parser: ^3.0.1
+  xml: ^6.5.0
+
+  # JSON 处理
+  json_annotation: ^4.8.1
+  json_path: ^0.9.0
+
+  # JavaScript 引擎
+  flutter_js: ^0.8.5
+
+  # 文件处理
+  file_picker: ^10.3.8
+  path_provider: ^2.1.1
+  image_picker: ^1.0.7
+  share_plus: ^12.0.1
+  open_filex: ^4.3.3
+  archive: ^3.4.9
+
+  # EPUB 支持
+  epubx: ^4.0.0
+
+  # 音频播放
+  just_audio: ^0.10.5
+  audio_service: ^0.18.11
+
+  # 二维码
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.1.4
+
+  # 本地存储
+  shared_preferences: ^2.2.2
+  get_storage: ^2.1.1
+
+  # 工具类
+  intl: ^0.20.2
+  url_launcher: ^6.2.2
+  package_info_plus: ^9.0.0
+  device_info_plus: ^12.3.0
+  connectivity_plus: ^7.0.0
+  battery_plus: ^5.0.2
+  permission_handler: ^12.0.1
+  
+  # 屏幕亮度控制
+  screen_brightness: ^0.2.2+1
+  
+  # 屏幕常亮
+  wakelock_plus: ^1.2.1
+  
+  # 音量键监听（使用 volume_controller 作为替代方案，或使用平台通道）
+  # hardware_buttons 插件可能不可用，我们使用 RawKeyboardListener 和平台通道实现
+
+  # 加密解密
+  crypto: ^3.0.3
+  encrypt: ^5.0.3
+  pointycastle: ^3.7.3  # 非对称加密和签名
+
+  # 文本处理
+  # pinyin: ^2.0.0  # 暂时注释，版本不兼容
+  flutter_opencc_ffi_native: ^0.0.3  # 简繁转换（OpenCC）
+  charset_converter: ^2.1.1  # GBK编码支持
+
+  # Web 服务器
+  shelf: ^1.4.1
+  shelf_router: ^1.1.4
+  shelf_web_socket: ^3.0.0
+
+  # 其他
+  uuid: ^4.2.1
+  equatable: ^2.0.5
+  
+  # TTS 朗读
+  flutter_tts: ^4.1.0
+  freezed_annotation: ^3.1.0
+  
+  # URL Scheme
+  app_links: ^6.3.3
+  
+  # 本地通知
+  flutter_local_notifications: ^17.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.7
+  json_serializable: ^6.7.1
+  freezed: ^3.2.3
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/fonts/
+    - assets/defaultData/
+    - assets/bg/
+    - assets/epub/
+    - assets/web/
+    - assets/18PlusList.txt
+    - assets/cronet.json
+    - assets/disclaimer.md
+    - assets/LICENSE.md
+    - assets/privacyPolicy.md
+    - assets/storageHelp.md
+    - assets/updateLog.md
+
+  # fonts:
+  #   - family: NumberFont
+  #     fonts:
+  #       - asset: assets/fonts/number.ttf
+
