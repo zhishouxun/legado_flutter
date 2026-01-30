@@ -68,6 +68,12 @@ class BookChapter {
   @JsonKey(name: 'variable')
   String? variable;
 
+  /// 章节内容文件的本地路径 (相对路径)
+  /// 格式: "bookFolderName/00001-abc.txt"
+  /// 用于分文件存储策略,提升长章节读取性能
+  @JsonKey(name: 'localPath')
+  String? localPath;
+
   BookChapter({
     required this.url,
     this.title = '',
@@ -85,6 +91,7 @@ class BookChapter {
     this.startFragmentId,
     this.endFragmentId,
     this.variable,
+    this.localPath,
   });
 
   factory BookChapter.fromJson(Map<String, dynamic> json) {
@@ -105,6 +112,7 @@ class BookChapter {
       startFragmentId: json['startFragmentId'],
       endFragmentId: json['endFragmentId'],
       variable: json['variable'],
+      localPath: json['localPath'],
     );
   }
   
@@ -126,6 +134,7 @@ class BookChapter {
       'startFragmentId': startFragmentId,
       'endFragmentId': endFragmentId,
       'variable': variable,
+      'localPath': localPath,
     };
   }
 
@@ -146,6 +155,7 @@ class BookChapter {
     String? startFragmentId,
     String? endFragmentId,
     String? variable,
+    String? localPath,
   }) {
     return BookChapter(
       url: url ?? this.url,
@@ -164,6 +174,7 @@ class BookChapter {
       startFragmentId: startFragmentId ?? this.startFragmentId,
       endFragmentId: endFragmentId ?? this.endFragmentId,
       variable: variable ?? this.variable,
+      localPath: localPath ?? this.localPath,
     );
   }
 

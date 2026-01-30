@@ -50,9 +50,17 @@ void main() async {
 
     // 第二阶段：关键服务初始化（只初始化最核心的服务）
     startupPerformanceMonitor.start('critical_services_init');
+    
+    // 添加细分埋点，诊断具体慢点
+    final criticalStopwatch = Stopwatch()..start();
 
-    // 仅初始化绝对必要的服务
-    await _initNetworkService(); // 网络服务是核心功能
+    // 优化：所有服务改为懒加载，首次使用时自动初始化
+    // NetworkService 已经继承自 BaseService，支持自动懒加载
+    // 当首次调用 NetworkService.instance.get() 时会自动调用 init()
+    print('Check: Critical services skipped (lazy loading)');
+    
+    print('Check: Critical services init took ${criticalStopwatch.elapsedMilliseconds}ms');
+    criticalStopwatch.reset();
 
     // 其他服务移到后台初始化
     _scheduleEarlyBackgroundInitialization();

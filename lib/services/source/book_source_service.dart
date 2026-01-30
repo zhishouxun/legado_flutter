@@ -4,6 +4,8 @@ import '../../core/base/base_service.dart';
 import '../../data/database/app_database.dart';
 import '../../data/models/book_source.dart';
 import '../../utils/eighteen_plus_filter.dart';
+import '../../utils/app_log.dart';
+import 'book_source_parser.dart';
 
 /// 书源管理服务
 class BookSourceService extends BaseService {
@@ -307,6 +309,68 @@ class BookSourceService extends BaseService {
       'imported': count,
       'blocked': blocked.length,
     };
+  }
+
+  /// 从JSON字符串导入书源(使用Isolate解析)
+  /// 
+  /// ✅ 符合项目规范: 在Isolate中解析JSON,避免UI线程阻塞
+  /// 
+  /// [jsonString] JSON字符串(可以是数组或单个对象)
+  /// [onProgress] 进度回调(可选)
+  /// 返回：{imported: 导入数量, blocked: 被过滤的18+网站数量, total: JSON中的总数量}
+  Future<Map<String, int>> importBookSourcesFromJson(
+    String jsonString, {
+    void Function(double progress)? onProgress,
+  }) async {
+    final db = await _db.database;
+    if (db == null) throw Exception('数据库不可用（Web平台不支持SQLite）');
+
+    try {
+      final allSources = <BookSource>[];
+      
+      if (onProgress != null) {
+        // 使用批量解析,支持进度回调
+        await for (final result in BookSourceParser.parseInBatches(
+          jsonString: jsonString,
+          batchSize: 100, // 每批100个
+        )) {
+          allSources.addAll(result.sources);
+          onProgress(result.progress);
+          
+          if (result.error != null) {
+            AppLog.instance.put('解析书源JSON出错: ${result.error}');
+          }
+        }
+      } else {
+        // 直接解析,不需要进度反馈
+        final parsedSources = await BookSourceParser.parseInBackground(jsonString);
+        allSources.addAll(parsedSources);
+      }
+
+      // 使用现有的importBookSources方法导入
+      if (allSources.isEmpty) {
+        return {
+          'imported': 0,
+          'blocked': 0,
+          'total': 0,
+        };
+      }
+
+      final importResult = await importBookSources(allSources);
+      
+      return {
+        'imported': importResult['imported'] ?? 0,
+        'blocked': importResult['blocked'] ?? 0,
+        'total': allSources.length,
+      };
+    } catch (e) {
+      AppLog.instance.put('从JSON导入书源失败', error: e);
+      return {
+        'imported': 0,
+        'blocked': 0,
+        'total': 0,
+      };
+    }
   }
 
   /// 启用/禁用书源

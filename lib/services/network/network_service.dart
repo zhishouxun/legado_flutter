@@ -50,17 +50,26 @@ class NetworkService extends BaseService {
   Future<void> onInit() async {
     return await execute(
       action: () async {
+        final initStopwatch = Stopwatch()..start();
+        
         // Web平台使用内存Cookie存储
+        print('NetworkService: Check 1 - CookieJar init start');
         if (kIsWeb) {
           _cookieJar = CookieJar();
         } else {
           final appDocPath = await FileUtils.getDocumentsPath();
+          print('NetworkService: Check 1a - getDocumentsPath took ${initStopwatch.elapsedMilliseconds}ms');
+          initStopwatch.reset();
+          
           final cookiePath = FileUtils.getPath(appDocPath, ['cookies']);
           _cookieJar = PersistCookieJar(
             storage: FileStorage(cookiePath),
           );
+          print('NetworkService: Check 1b - PersistCookieJar init took ${initStopwatch.elapsedMilliseconds}ms');
+          initStopwatch.reset();
         }
 
+    print('NetworkService: Check 2 - Dio init start');
     _dio = Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: 15), // 参考项目使用15秒
@@ -85,8 +94,11 @@ class NetworkService extends BaseService {
         },
       ),
     );
+    print('NetworkService: Check 2 - Dio init took ${initStopwatch.elapsedMilliseconds}ms');
+    initStopwatch.reset();
 
     // 配置HTTP客户端适配器（仅非Web平台）
+    print('NetworkService: Check 3 - HttpClientAdapter config start');
     if (!kIsWeb) {
       (_dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
         final client = HttpClient();
@@ -99,7 +111,10 @@ class NetworkService extends BaseService {
         return client;
       };
     }
+    print('NetworkService: Check 3 - HttpClientAdapter config took ${initStopwatch.elapsedMilliseconds}ms');
+    initStopwatch.reset();
 
+        print('NetworkService: Check 4 - Interceptors config start');
         _dio.interceptors.add(CookieManager(_cookieJar));
 
         // 错误拦截器
@@ -113,6 +128,9 @@ class NetworkService extends BaseService {
             ));
           },
         ));
+        print('NetworkService: Check 4 - Interceptors config took ${initStopwatch.elapsedMilliseconds}ms');
+        
+        print('NetworkService: Total init time: ${initStopwatch.elapsedMilliseconds}ms');
       },
       operationName: '初始化网络服务',
       logError: true,

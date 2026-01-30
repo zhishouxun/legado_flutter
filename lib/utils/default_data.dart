@@ -13,6 +13,7 @@ import '../utils/app_log.dart';
 import '../services/keyboard_assist_service.dart';
 import '../services/read_config_service.dart';
 import '../services/source/book_source_service.dart';
+import '../services/source/book_source_parser.dart';
 
 /// 默认数据工具类
 /// 参考项目：io.legado.app.help.DefaultData
@@ -171,15 +172,19 @@ class DefaultData {
   }
 
   /// 默认书源列表
+  /// 
+  /// ✅ 符合项目规范: 使用Isolate解析JSON,避免UI线程阻塞
   List<BookSource>? _bookSources;
   Future<List<BookSource>> get bookSources async {
     if (_bookSources != null) return _bookSources!;
     try {
-      final json = await rootBundle.loadString('assets/defaultData/bookSources.json');
-      final jsonList = jsonDecode(json) as List;
-      _bookSources = jsonList
-          .map((item) => BookSource.fromJson(item as Map<String, dynamic>))
-          .toList();
+      // 第一步: 在UI线程读取Assets文件内容(这是快速操作)
+      final jsonString = await rootBundle.loadString('assets/defaultData/bookSources.json');
+      
+      // 第二步: 在Isolate中解析JSON(耗时操作,不阻塞UI线程)
+      _bookSources = await BookSourceParser.parseInBackground(jsonString);
+      
+      AppLog.instance.put('成功加载 ${_bookSources!.length} 个默认书源(Isolate解析)');
       return _bookSources!;
     } catch (e) {
       AppLog.instance.put('加载默认书源失败', error: e);

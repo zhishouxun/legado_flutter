@@ -38,7 +38,7 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 18, // 升级版本以支持所有缺失的表
+      version: 19, // 升级版本以支持章节内容分文件存储
       onCreate: _createDB,
       onUpgrade: _onUpgrade,
     );
@@ -101,6 +101,7 @@ class AppDatabase {
         startFragmentId TEXT,
         endFragmentId TEXT,
         variable TEXT,
+        localPath TEXT,
         PRIMARY KEY (url, bookUrl),
         FOREIGN KEY (bookUrl) REFERENCES books(bookUrl) ON DELETE CASCADE
       )

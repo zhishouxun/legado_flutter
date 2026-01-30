@@ -189,28 +189,24 @@ class RestoreService extends BaseService {
   }
 
   /// 恢复书源
+  /// 
+  /// ✅ 优化: 使用Isolate解析JSON,避免UI线程阻塞
   Future<void> _restoreBookSources(Directory backupDir) async {
     final file = File('${backupDir.path}/bookSource.json');
     if (!await file.exists()) return;
 
     try {
+      // 读取JSON文件内容
       final jsonString = await file.readAsString();
-      final jsonList = jsonDecode(jsonString) as List;
-      final sources = jsonList.map((json) => BookSource.fromJson(json as Map<String, dynamic>)).toList();
-
-      for (final source in sources) {
-        try {
-          // 检查书源是否已存在
-          final existing = await BookSourceService.instance.getBookSourceByUrl(source.bookSourceUrl);
-          if (existing != null) {
-            await BookSourceService.instance.updateBookSource(source);
-          } else {
-            await BookSourceService.instance.addBookSource(source);
-          }
-        } catch (e) {
-          AppLog.instance.put('恢复书源失败: ${source.bookSourceName}', error: e);
-        }
-      }
+      
+      // ✅ 使用BookSourceService的Isolate解析方法
+      final result = await BookSourceService.instance.importBookSourcesFromJson(
+        jsonString,
+      );
+      
+      AppLog.instance.put(
+        '恢复书源完成: 导入${result['imported']}个, 过滤${result['blocked']}个18+网站'
+      );
     } catch (e) {
       AppLog.instance.put('恢复书源失败', error: e);
     }

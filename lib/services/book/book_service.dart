@@ -23,6 +23,7 @@ import '../../utils/helpers/book_extensions.dart';
 import '../../utils/network_utils.dart';
 import '../source/book_source_service.dart';
 import '../reader/cache_service.dart';
+import '../reader/chapter_content_service.dart';
 import '../reader/content_processor.dart';
 
 /// 书籍服务 - 处理搜索、详情、章节、正文等功能
@@ -2159,12 +2160,48 @@ class BookService extends BaseService {
       return null;
     }
 
-    // 优化：优先检查文件缓存（参考项目：BookHelp.hasContent + getContent）
-    // 在检查 _loadingChapters 之前先检查文件缓存，避免竞态条件
+    // ✅ 新策略: 优先从文件存储读取
     if (book != null && !book.isLocal) {
+      // 1. 如果chapter有localPath,从文件读取
+      if (chapter.localPath != null && chapter.localPath!.isNotEmpty) {
+        final fileContent = await ChapterContentService.instance
+            .getChapterContent(book, chapter);
+        if (fileContent != null && fileContent.isNotEmpty) {
+          AppLog.instance.put(
+            '从文件存储读取: ${chapter.title} (${fileContent.length}字)'
+          );
+          return fileContent;
+        }
+        // localPath存在但文件不存在,继续从网络获取
+        AppLog.instance.put(
+          '警告: localPath存在但文件不存在: ${chapter.title}'
+        );
+      }
+      
+      // 2. 尝试从文件系统读取(向后兼容旧缓存)
+      final fileContent = await ChapterContentService.instance
+          .getChapterContent(book, chapter);
+      if (fileContent != null && fileContent.isNotEmpty) {
+        AppLog.instance.put(
+          '从文件系统读取(无localPath): ${chapter.title} (${fileContent.length}字)'
+        );
+        // 更新localPath
+        final localPath = ChapterContentService.instance
+            .getChapterLocalPath(book, chapter);
+        chapter.localPath = localPath;
+        // 异步更新数据库,不阻塞返回
+        _updateChapterLocalPath(chapter.bookUrl, chapter.url, localPath)
+            .catchError((e) => AppLog.instance.put('更新localPath失败', error: e));
+        return fileContent;
+      }
+
+      // 3. 回退: 从旧的CacheService读取
       final cachedContent =
           await CacheService.instance.getCachedChapterContent(book, chapter);
       if (cachedContent != null && cachedContent.isNotEmpty) {
+        AppLog.instance.put(
+          '从旧缓存读取: ${chapter.title} (${cachedContent.length}字)'
+        );
         return cachedContent;
       }
     }
@@ -2557,7 +2594,19 @@ class BookService extends BaseService {
       // 参考项目：在返回内容前立即保存到缓存（BookHelp.saveText）
       // 这样可以避免 _loadingChapters 移除后、缓存写入前的竞态条件
       if (book != null && !book.isLocal) {
-        // 直接保存内容（不通过 cacheChapter 避免循环调用）
+        // ✅ 新策略: 保存到文件存储
+        final localPath = await ChapterContentService.instance
+            .saveChapterContent(book, chapter, content);
+        
+        if (localPath != null) {
+          // 更新内存中的chapter对象
+          chapter.localPath = localPath;
+          // 异步更新数据库,不阻塞返回
+          _updateChapterLocalPath(chapter.bookUrl, chapter.url, localPath)
+              .catchError((e) => AppLog.instance.put('更新localPath失败', error: e));
+        }
+        
+        // 同时保存到旧缓存(向后兼容)
         await CacheService.instance.saveChapterContent(book, chapter, content);
       } else if (book == null) {
         // 未传入 book 参数，尝试从数据库查询（向后兼容）
@@ -2965,5 +3014,31 @@ class BookService extends BaseService {
     // 参考项目：使用章节URL的MD5作为文件名
     // 这里简化处理，使用章节索引和URL的组合
     return '${chapter.index}_${chapter.url}';
+  }
+
+  /// 更新章节的localPath字段
+  /// 
+  /// 将章节内容文件路径更新到数据库
+  Future<void> _updateChapterLocalPath(
+    String bookUrl,
+    String chapterUrl,
+    String localPath,
+  ) async {
+    try {
+      final db = await _db.database;
+      if (db == null) return;
+
+      await db.update(
+        'chapters',
+        {'localPath': localPath},
+        where: 'bookUrl = ? AND url = ?',
+        whereArgs: [bookUrl, chapterUrl],
+      );
+    } catch (e) {
+      AppLog.instance.put(
+        '更新章节localPath失败: bookUrl=$bookUrl, url=$chapterUrl',
+        error: e,
+      );
+    }
   }
 }
