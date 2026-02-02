@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:extended_image/extended_image.dart';
 import '../../../data/models/manga_color_filter_config.dart';
 import '../../../config/app_config.dart';
 
@@ -66,25 +66,36 @@ class MangaImageWidget extends StatelessWidget {
 
     return ColorFiltered(
       colorFilter: colorFilter ?? const ColorFilter.mode(Colors.transparent, BlendMode.dst),
-      child: CachedNetworkImage(
-        imageUrl: imageUrl,
+      child: ExtendedImage.network(
+        imageUrl,
         fit: fit,
-        placeholder: (context, url) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        errorWidget: (context, url, error) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.broken_image, size: 64, color: Colors.grey),
-              const SizedBox(height: 16),
-              const Text(
-                '加载失败',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
+        cache: true,
+        mode: ExtendedImageMode.gesture,
+        clearMemoryCacheIfFailed: true,
+        loadStateChanged: (state) {
+          switch (state.extendedImageLoadState) {
+            case LoadState.loading:
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            case LoadState.failed:
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.broken_image, size: 64, color: Colors.grey),
+                    SizedBox(height: 16),
+                    Text(
+                      '加载失败',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
+            case LoadState.completed:
+              return state.completedWidget;
+          }
+        },
       ),
     );
   }

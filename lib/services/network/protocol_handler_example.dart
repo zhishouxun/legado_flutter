@@ -2,7 +2,7 @@ import '../../data/models/book_source.dart';
 import 'protocol_handler.dart';
 
 /// 多源协议处理器使用示例
-/// 
+///
 /// 展示如何使用ProtocolHandler处理不同协议类型的书源
 
 // ==================== 示例1: HTTP协议 (常规网页) ====================
@@ -176,9 +176,11 @@ class ProtocolDetectionExample {
       searchUrl: 'https://protected.example.com/search@webview',
     );
 
-    print('source1使用WebView: ${ProtocolHandler.instance.isWebViewSource(source1)}');
+    print(
+        'source1使用WebView: ${ProtocolHandler.instance.isWebViewSource(source1)}');
     print('source2使用JSON: ${ProtocolHandler.instance.isJsonSource(source2)}');
-    print('source3使用WebView: ${ProtocolHandler.instance.isWebViewSource(source3)}');
+    print(
+        'source3使用WebView: ${ProtocolHandler.instance.isWebViewSource(source3)}');
   }
 }
 
@@ -193,9 +195,9 @@ class BatchRequestExample {
     );
 
     final urls = [
-      'https://www.example.com/page1',           // HTTP
-      'https://api.example.com/data@json',       // JSON
-      'https://protected.example.com@webview',   // WebView
+      'https://www.example.com/page1', // HTTP
+      'https://api.example.com/data@json', // JSON
+      'https://protected.example.com@webview', // WebView
     ];
 
     try {
@@ -234,8 +236,9 @@ class BookServiceIntegrationExample {
       );
 
       // 根据协议类型解析响应
-      final protocolType = ProtocolHandler.instance.detectProtocolType(searchUrl);
-      
+      final protocolType =
+          ProtocolHandler.instance.detectProtocolType(searchUrl);
+
       if (protocolType == ProtocolType.json) {
         // JSON响应 - 直接解析
         // return parseJsonResponse(response);

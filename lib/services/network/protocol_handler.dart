@@ -6,35 +6,35 @@ import '../network/network_service.dart';
 import 'webview_protocol_handler.dart';
 
 /// 协议类型枚举
-/// 
+///
 /// 定义支持的书源协议类型
 enum ProtocolType {
   /// HTTP/HTTPS协议 - 常规网页解析
   http,
-  
+
   /// JSON/API协议 - 现代小说网站API
   json,
-  
+
   /// WebView协议 - 处理严格反爬网站(验证码、动态Token等)
   webview,
 }
 
 /// 多源协议处理器
-/// 
+///
 /// **设计思路:**
 /// 统一处理不同协议类型的书源请求,根据协议类型自动选择合适的处理策略
-/// 
+///
 /// **支持的协议:**
 /// 1. HTTP/HTTPS: 常规网页解析 (默认)
 /// 2. JSON/API: JSON响应直接解析
 /// 3. WebView: 处理严格反爬虫网站
-/// 
+///
 /// **使用场景:**
 /// - 搜索书籍
 /// - 获取书籍详情
 /// - 获取章节列表
 /// - 获取章节内容
-/// 
+///
 /// 参考项目: io.legado.app.model.webBook
 class ProtocolHandler {
   static final ProtocolHandler instance = ProtocolHandler._init();
@@ -43,35 +43,35 @@ class ProtocolHandler {
   final _networkService = NetworkService.instance;
 
   /// 根据URL判断协议类型
-  /// 
+  ///
   /// 规则:
   /// - URL包含 '@webview' 标记 → WebView协议
   /// - URL包含 '@json' 标记或以 '.json' 结尾 → JSON协议
   /// - 其他 → HTTP协议
   ProtocolType detectProtocolType(String url) {
     final lowerUrl = url.toLowerCase();
-    
+
     // WebView协议标记
-    if (lowerUrl.contains('@webview') || 
+    if (lowerUrl.contains('@webview') ||
         lowerUrl.contains('webview:') ||
         lowerUrl.contains('<webview>')) {
       return ProtocolType.webview;
     }
-    
+
     // JSON协议标记
-    if (lowerUrl.contains('@json') || 
+    if (lowerUrl.contains('@json') ||
         lowerUrl.endsWith('.json') ||
         lowerUrl.contains('api/') ||
         lowerUrl.contains('/api.')) {
       return ProtocolType.json;
     }
-    
+
     // 默认HTTP协议
     return ProtocolType.http;
   }
 
   /// 清理URL中的协议标记
-  /// 
+  ///
   /// 移除 @webview, @json 等标记,返回纯净的URL
   String cleanProtocolMarkers(String url) {
     return url
@@ -84,14 +84,14 @@ class ProtocolHandler {
   }
 
   /// 执行网络请求 (根据协议类型自动选择处理方式)
-  /// 
+  ///
   /// [url] 请求URL (可包含协议标记)
   /// [source] 书源配置
   /// [method] HTTP方法 (GET/POST)
   /// [headers] 请求头
   /// [data] POST数据
   /// [forceProtocol] 强制使用指定协议
-  /// 
+  ///
   /// 返回: HTTP响应文本
   Future<String> request({
     required String url,
@@ -103,13 +103,11 @@ class ProtocolHandler {
   }) async {
     // 1. 检测或使用强制指定的协议类型
     final protocolType = forceProtocol ?? detectProtocolType(url);
-    
+
     // 2. 清理URL中的协议标记
     final cleanUrl = cleanProtocolMarkers(url);
-    
-    AppLog.instance.put(
-      '协议处理: $protocolType, URL: $cleanUrl'
-    );
+
+    AppLog.instance.put('协议处理: $protocolType, URL: $cleanUrl');
 
     // 3. 根据协议类型处理请求
     switch (protocolType) {
@@ -121,7 +119,7 @@ class ProtocolHandler {
           headers,
           data,
         );
-        
+
       case ProtocolType.json:
         return await _handleJsonProtocol(
           cleanUrl,
@@ -130,7 +128,7 @@ class ProtocolHandler {
           headers,
           data,
         );
-        
+
       case ProtocolType.webview:
         return await _handleWebViewProtocol(
           cleanUrl,
@@ -141,7 +139,7 @@ class ProtocolHandler {
   }
 
   /// 处理HTTP/HTTPS协议
-  /// 
+  ///
   /// 常规网页解析,使用Dio直接请求
   Future<String> _handleHttpProtocol(
     String url,
@@ -158,7 +156,7 @@ class ProtocolHandler {
       };
 
       Response response;
-      
+
       if (method.toUpperCase() == 'POST') {
         response = await _networkService.post(
           url,
@@ -180,9 +178,9 @@ class ProtocolHandler {
   }
 
   /// 处理JSON/API协议
-  /// 
+  ///
   /// 针对现代小说网站API,直接返回JSON响应
-  /// 
+  ///
   /// **特性:**
   /// - 自动设置 Content-Type: application/json
   /// - 自动解析JSON响应
@@ -204,7 +202,7 @@ class ProtocolHandler {
       };
 
       Response response;
-      
+
       if (method.toUpperCase() == 'POST') {
         // POST数据自动JSON序列化
         final jsonData = data is String ? data : jsonEncode(data);
@@ -222,7 +220,7 @@ class ProtocolHandler {
 
       // 验证响应是否为JSON
       final responseText = await NetworkService.getResponseText(response);
-      
+
       try {
         // 尝试解析JSON以验证格式
         jsonDecode(responseText);
@@ -239,19 +237,19 @@ class ProtocolHandler {
   }
 
   /// 处理WebView协议
-  /// 
+  ///
   /// 针对带有严苛反爬的网站:
   /// - 验证码
   /// - 动态Token
   /// - JavaScript加密
   /// - Cookie依赖
-  /// 
+  ///
   /// **策略:**
   /// 1. 静默启动WebView
   /// 2. 加载目标页面
   /// 3. 执行JavaScript获取内容
   /// 4. 自动保存Cookie
-  /// 
+  ///
   /// 参考项目: io.legado.app.help.http.WebViewHelper
   Future<String> _handleWebViewProtocol(
     String url,
@@ -260,7 +258,7 @@ class ProtocolHandler {
   ) async {
     try {
       AppLog.instance.put('WebView协议: 启动静默WebView');
-      
+
       // 调用WebView处理器
       final result = await WebViewProtocolHandler.instance.loadPage(
         url: url,
@@ -269,9 +267,8 @@ class ProtocolHandler {
       );
 
       if (result.success) {
-        AppLog.instance.put(
-          'WebView协议: 成功获取内容 (${result.content?.length ?? 0}字)'
-        );
+        AppLog.instance
+            .put('WebView协议: 成功获取内容 (${result.content?.length ?? 0}字)');
         return result.content ?? '';
       } else {
         throw Exception('WebView加载失败: ${result.error}');
@@ -283,7 +280,7 @@ class ProtocolHandler {
   }
 
   /// 批量请求 (支持多协议混合)
-  /// 
+  ///
   /// 自动检测每个URL的协议类型并并发请求
   Future<List<String>> batchRequest({
     required List<String> urls,

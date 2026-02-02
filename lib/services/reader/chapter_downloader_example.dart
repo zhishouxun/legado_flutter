@@ -5,7 +5,7 @@ import '../book/book_service.dart';
 import '../source/book_source_service.dart';
 
 /// 基于Isolate的章节下载器使用示例
-/// 
+///
 /// 展示3种常见下载场景:
 /// 1. 下载全本
 /// 2. 缓存后N章
@@ -16,10 +16,12 @@ import '../source/book_source_service.dart';
 class DownloadWholeBookExample extends StatefulWidget {
   final Book book;
 
-  const DownloadWholeBookExample({Key? key, required this.book}) : super(key: key);
+  const DownloadWholeBookExample({Key? key, required this.book})
+      : super(key: key);
 
   @override
-  State<DownloadWholeBookExample> createState() => _DownloadWholeBookExampleState();
+  State<DownloadWholeBookExample> createState() =>
+      _DownloadWholeBookExampleState();
 }
 
 class _DownloadWholeBookExampleState extends State<DownloadWholeBookExample> {
@@ -188,7 +190,7 @@ class CacheNextChaptersExample {
       // 2. 计算要缓存的章节范围
       final startIndex = currentIndex + 1;
       final endIndex = (startIndex + count).clamp(0, allChapters.length);
-      
+
       if (startIndex >= allChapters.length) {
         print('已是最后一章,无需缓存');
         return;
@@ -197,8 +199,8 @@ class CacheNextChaptersExample {
       final chaptersToCache = allChapters.sublist(startIndex, endIndex);
 
       // 3. 获取书源
-      final source = await BookSourceService.instance
-          .getBookSourceByUrl(book.origin);
+      final source =
+          await BookSourceService.instance.getBookSourceByUrl(book.origin);
       if (source == null) {
         print('书源不存在');
         return;
@@ -301,13 +303,16 @@ class _DownloadProgressWidgetState extends State<DownloadProgressWidget> {
 class BookCoverWithDownloadBadge extends StatefulWidget {
   final Book book;
 
-  const BookCoverWithDownloadBadge({Key? key, required this.book}) : super(key: key);
+  const BookCoverWithDownloadBadge({Key? key, required this.book})
+      : super(key: key);
 
   @override
-  State<BookCoverWithDownloadBadge> createState() => _BookCoverWithDownloadBadgeState();
+  State<BookCoverWithDownloadBadge> createState() =>
+      _BookCoverWithDownloadBadgeState();
 }
 
-class _BookCoverWithDownloadBadgeState extends State<BookCoverWithDownloadBadge> {
+class _BookCoverWithDownloadBadgeState
+    extends State<BookCoverWithDownloadBadge> {
   final _downloader = ChapterDownloaderService.instance;
 
   @override

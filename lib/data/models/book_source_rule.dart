@@ -229,6 +229,11 @@ class ContentRule {
   @JsonKey(name: 'content')
   String? content;
 
+  /// 漫画章节图片URL列表规则（可选）
+  /// 优先于 [content] 提取图片列表，支持 CSS/XPath/JSONPath/JS/## 语法
+  @JsonKey(name: 'images')
+  String? images;
+
   @JsonKey(name: 'nextContentUrl')
   String? nextContentUrl;
 
@@ -249,6 +254,7 @@ class ContentRule {
 
   ContentRule({
     this.content,
+    this.images,
     this.nextContentUrl,
     this.webJs,
     this.sourceRegex,
@@ -260,6 +266,7 @@ class ContentRule {
   factory ContentRule.fromJson(Map<String, dynamic> json) {
     return ContentRule(
       content: json['content'],
+      images: json['images'],
       nextContentUrl: json['nextContentUrl'],
       webJs: json['webJs'],
       sourceRegex: json['sourceRegex'],
@@ -272,6 +279,7 @@ class ContentRule {
   Map<String, dynamic> toJson() {
     return {
       'content': content,
+      'images': images,
       'nextContentUrl': nextContentUrl,
       'webJs': webJs,
       'sourceRegex': sourceRegex,

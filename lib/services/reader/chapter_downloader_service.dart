@@ -9,42 +9,43 @@ import '../notification_service.dart';
 import 'cache_service.dart';
 
 /// 基于Isolate的章节下载服务
-/// 
+///
 /// 设计思路:
 /// 1. **主Isolate**: 负责UI更新(进度条)和发送指令(开始/停止)
 /// 2. **Worker Isolate**: 负责真正的网络请求、内容解析、文件缓存
 /// 3. **性能优化**: 批量下载、事务提交、避免内存溢出
-/// 
+///
 /// 使用场景:
 /// - 用户点击"下载全本"
 /// - 自动缓存后三章
 /// - 批量缓存选定章节
-/// 
+///
 /// 参考文档: gemini重构建议/如何写一个DownloaderService.md
 class ChapterDownloaderService {
-  static final ChapterDownloaderService instance = ChapterDownloaderService._init();
+  static final ChapterDownloaderService instance =
+      ChapterDownloaderService._init();
   ChapterDownloaderService._init();
 
   static const int notificationId = 105;
-  
+
   // Worker Isolate相关
   Isolate? _isolate;
   ReceivePort? _receivePort;
   SendPort? _sendPort;
-  
+
   // 当前下载任务
   DownloadTask? _currentTask;
   bool _isDownloading = false;
-  
+
   // 进度通知器
-  final ValueNotifier<DownloadProgress> progressNotifier = 
+  final ValueNotifier<DownloadProgress> progressNotifier =
       ValueNotifier(DownloadProgress.idle());
 
   /// 是否正在下载
   bool get isDownloading => _isDownloading;
 
   /// 开始下载任务
-  /// 
+  ///
   /// [book] 书籍
   /// [chapters] 要下载的章节列表
   /// [source] 书源
@@ -63,11 +64,12 @@ class ChapterDownloaderService {
     }
 
     _isDownloading = true;
-    
+
     // 过滤出未缓存的章节
     final uncachedChapters = <BookChapter>[];
     for (final chapter in chapters) {
-      final isCached = await CacheService.instance.hasChapterCache(book, chapter);
+      final isCached =
+          await CacheService.instance.hasChapterCache(book, chapter);
       if (!isCached) {
         uncachedChapters.add(chapter);
       }
@@ -84,8 +86,7 @@ class ChapterDownloaderService {
     }
 
     AppLog.instance.put(
-      '开始下载: ${book.name}, 共${uncachedChapters.length}章(总${chapters.length}章)'
-    );
+        '开始下载: ${book.name}, 共${uncachedChapters.length}章(总${chapters.length}章)');
 
     // 创建下载任务
     _currentTask = DownloadTask(
@@ -131,19 +132,19 @@ class ChapterDownloaderService {
     if (!_isDownloading) return;
 
     AppLog.instance.put('停止下载');
-    
+
     // 发送停止指令
     _sendPort?.send({'action': 'stop'});
-    
+
     // 等待一小段时间让Worker处理停止指令
     await Future.delayed(const Duration(milliseconds: 100));
-    
+
     // 强制杀死Isolate
     await _killWorkerIsolate();
-    
+
     _isDownloading = false;
     _currentTask = null;
-    
+
     progressNotifier.value = DownloadProgress.cancelled();
   }
 
@@ -219,9 +220,8 @@ class ChapterDownloaderService {
     final success = message['success'] as int;
     final failed = message['failed'] as int;
 
-    AppLog.instance.put(
-      '下载完成: ${_currentTask?.book.name}, 成功$success章, 失败$failed章'
-    );
+    AppLog.instance
+        .put('下载完成: ${_currentTask?.book.name}, 成功$success章, 失败$failed章');
 
     progressNotifier.value = DownloadProgress.completed(
       total: total,
@@ -304,11 +304,11 @@ class ChapterDownloaderService {
 }
 
 /// Worker Isolate入口函数
-/// 
+///
 /// ⚠️ 必须是顶层函数或静态方法
 void _downloadWorker(SendPort mainSendPort) async {
   final workerReceivePort = ReceivePort();
-  
+
   // 向主Isolate发送Worker的SendPort
   mainSendPort.send(workerReceivePort.sendPort);
 
@@ -316,7 +316,7 @@ void _downloadWorker(SendPort mainSendPort) async {
   await for (var message in workerReceivePort) {
     if (message is Map) {
       final action = message['action'] as String?;
-      
+
       if (action == 'stop') {
         // 停止下载
         break;
@@ -359,7 +359,7 @@ Future<void> _executeDownloadTask(
         // 1. 网络请求(需要在Worker中初始化Dio)
         // 2. 内容解析(使用LegadoParser)
         // 3. 文件缓存(直接写入文件系统)
-        
+
         // 临时实现: 标记为成功
         successCount++;
 
@@ -490,9 +490,9 @@ class DownloadProgress {
 
 /// 下载状态枚举
 enum DownloadStatus {
-  idle,        // 空闲
+  idle, // 空闲
   downloading, // 下载中
-  completed,   // 已完成
-  cancelled,   // 已取消
-  error,       // 出错
+  completed, // 已完成
+  cancelled, // 已取消
+  error, // 出错
 }

@@ -5,6 +5,7 @@ import '../../data/models/book.dart';
 import '../../data/models/book_chapter.dart';
 import '../../data/models/book_source_rule.dart';
 import '../../utils/parsers/html_parser.dart';
+import '../../utils/parsers/rule_parser.dart';
 import '../../utils/js_engine.dart';
 import '../../utils/js_extensions.dart';
 import '../network/network_service.dart';
@@ -55,6 +56,33 @@ class MangaService extends BaseService {
     final imageUrls = <String>[];
 
     try {
+      // 1. 优先使用 images 规则（专为漫画设计）
+      if (rule.images != null && rule.images!.isNotEmpty) {
+        final rawList = RuleParser.parseListRule(
+          html,
+          rule.images!,
+          baseUrl: baseUrl,
+        );
+
+        for (final item in rawList) {
+          final url = item.trim();
+          if (url.isEmpty) continue;
+
+          // 处理相对路径
+          String fullUrl = url;
+          if (!url.startsWith('http') && !url.startsWith('data:')) {
+            fullUrl = NetworkService.joinUrl(baseUrl, url);
+          }
+
+          if (!imageUrls.contains(fullUrl)) {
+            imageUrls.add(fullUrl);
+          }
+        }
+
+        return imageUrls;
+      }
+
+      // 2. 兼容旧规则：使用 content 容器 + img 标签提取
       if (rule.content == null || rule.content!.isEmpty) {
         return imageUrls;
       }
@@ -97,16 +125,16 @@ class MangaService extends BaseService {
         try {
           final xpathNodes = HtmlParser.selectXPath(document, rule.content!);
           if (xpathNodes.isNotEmpty) {
-          // 获取第一个节点的 HTML 内容
-          final nodeHtml = HtmlParser.getXPathNodeOuterHtml(xpathNodes.first);
-          if (nodeHtml != null && nodeHtml.isNotEmpty) {
-            // 解析为 Element
-            final nodeDoc = html_parser.parse(nodeHtml);
-            final firstChild = nodeDoc.body?.children.firstOrNull;
-            if (firstChild is html_dom.Element) {
-              contentElement = firstChild;
+            // 获取第一个节点的 HTML 内容
+            final nodeHtml = HtmlParser.getXPathNodeOuterHtml(xpathNodes.first);
+            if (nodeHtml != null && nodeHtml.isNotEmpty) {
+              // 解析为 Element
+              final nodeDoc = html_parser.parse(nodeHtml);
+              final firstChild = nodeDoc.body?.children.firstOrNull;
+              if (firstChild is html_dom.Element) {
+                contentElement = firstChild;
+              }
             }
-          }
           }
         } catch (e) {
           AppLog.instance.put('XPath 查询失败，回退到 CSS 选择器', error: e);

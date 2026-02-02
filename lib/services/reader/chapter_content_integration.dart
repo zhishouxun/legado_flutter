@@ -6,10 +6,10 @@ import 'chapter_content_service.dart';
 import '../../utils/app_log.dart';
 
 /// 章节内容集成示例
-/// 
+///
 /// 展示如何在BookService中集成ChapterContentService,
 /// 实现章节内容的分文件存储策略
-/// 
+///
 /// **集成要点:**
 /// 1. 保存章节内容时,同时保存到文件和更新数据库localPath
 /// 2. 读取章节内容时,优先从文件读取
@@ -20,14 +20,14 @@ import '../../utils/app_log.dart';
 
 class ChapterContentIntegration {
   /// 保存章节内容(新策略)
-  /// 
+  ///
   /// 此方法应该被集成到BookService.getChapterContent中
-  /// 
+  ///
   /// 流程:
   /// 1. 从书源获取章节内容
   /// 2. 保存到文件系统
   /// 3. 更新数据库中的localPath字段
-  /// 
+  ///
   /// 参考项目: io.legado.app.help.book.BookHelp.saveContent
   static Future<String?> saveAndGetChapterContent(
     Book book,
@@ -36,13 +36,12 @@ class ChapterContentIntegration {
   ) async {
     try {
       // 1. 先检查文件缓存
-      final cachedContent = await ChapterContentService.instance
-          .getChapterContent(book, chapter);
-      
+      final cachedContent =
+          await ChapterContentService.instance.getChapterContent(book, chapter);
+
       if (cachedContent != null && cachedContent.isNotEmpty) {
-        AppLog.instance.put(
-          '从文件缓存读取: ${chapter.title} (${cachedContent.length}字)'
-        );
+        AppLog.instance
+            .put('从文件缓存读取: ${chapter.title} (${cachedContent.length}字)');
         return cachedContent;
       }
 
@@ -69,9 +68,7 @@ class ChapterContentIntegration {
       // 4. 更新数据库中的localPath
       await _updateChapterLocalPath(chapter, localPath);
 
-      AppLog.instance.put(
-        '保存章节内容成功: ${chapter.title} → $localPath'
-      );
+      AppLog.instance.put('保存章节内容成功: ${chapter.title} → $localPath');
 
       return content;
     } catch (e) {
@@ -84,14 +81,14 @@ class ChapterContentIntegration {
   }
 
   /// 读取章节内容(新策略)
-  /// 
+  ///
   /// 此方法应该被集成到BookService.getChapterContent的开头
-  /// 
+  ///
   /// 流程:
   /// 1. 检查chapter.localPath是否存在
   /// 2. 如果存在,从文件读取
   /// 3. 如果不存在,回退到原有逻辑(从书源获取)
-  /// 
+  ///
   /// 参考项目: io.legado.app.help.book.BookHelp.getContent
   static Future<String?> getChapterContent(
     Book book,
@@ -102,27 +99,25 @@ class ChapterContentIntegration {
       if (chapter.localPath != null && chapter.localPath!.isNotEmpty) {
         final content = await ChapterContentService.instance
             .getChapterContent(book, chapter);
-        
+
         if (content != null) {
           return content;
         }
-        
+
         // localPath存在但文件不存在,可能是数据不一致
-        AppLog.instance.put(
-          '警告: localPath存在但文件不存在: ${chapter.title}'
-        );
+        AppLog.instance.put('警告: localPath存在但文件不存在: ${chapter.title}');
       }
 
       // 尝试从文件系统读取(即使没有localPath)
-      final fileContent = await ChapterContentService.instance
-          .getChapterContent(book, chapter);
-      
+      final fileContent =
+          await ChapterContentService.instance.getChapterContent(book, chapter);
+
       if (fileContent != null && fileContent.isNotEmpty) {
         // 找到文件但数据库没有localPath,更新数据库
-        final localPath = ChapterContentService.instance
-            .getChapterLocalPath(book, chapter);
+        final localPath =
+            ChapterContentService.instance.getChapterLocalPath(book, chapter);
         await _updateChapterLocalPath(chapter, localPath);
-        
+
         return fileContent;
       }
 
@@ -161,7 +156,7 @@ class ChapterContentIntegration {
   }
 
   /// 批量迁移章节内容(从旧缓存到新存储)
-  /// 
+  ///
   /// 用于从CacheService迁移到ChapterContentService
   static Future<Map<String, bool>> migrateBookChapters(
     Book book,
@@ -172,7 +167,8 @@ class ChapterContentIntegration {
     for (final chapter in chapters) {
       try {
         // 检查是否已经迁移
-        if (await ChapterContentService.instance.hasChapterContent(book, chapter)) {
+        if (await ChapterContentService.instance
+            .hasChapterContent(book, chapter)) {
           results[chapter.url] = true;
           continue;
         }
@@ -180,12 +176,12 @@ class ChapterContentIntegration {
         // 从旧缓存读取内容 (假设存在getCachedChapterContent方法)
         // final oldContent = await CacheService.instance
         //     .getCachedChapterContent(book, chapter);
-        
+
         // if (oldContent != null && oldContent.isNotEmpty) {
         //   // 保存到新存储
         //   final localPath = await ChapterContentService.instance
         //       .saveChapterContent(book, chapter, oldContent);
-          
+
         //   if (localPath != null) {
         //     await _updateChapterLocalPath(chapter, localPath);
         //     results[chapter.url] = true;
@@ -204,15 +200,14 @@ class ChapterContentIntegration {
     }
 
     final successCount = results.values.where((v) => v).length;
-    AppLog.instance.put(
-      '迁移完成: ${book.name}, 成功$successCount/${chapters.length}章'
-    );
+    AppLog.instance
+        .put('迁移完成: ${book.name}, 成功$successCount/${chapters.length}章');
 
     return results;
   }
 
   /// 清理书籍的章节内容
-  /// 
+  ///
   /// 同时清理文件和数据库localPath
   static Future<bool> clearBookChapters(
     Book book,
@@ -220,8 +215,8 @@ class ChapterContentIntegration {
   ) async {
     try {
       // 1. 清理文件
-      final fileCleared = await ChapterContentService.instance
-          .clearBookContents(book);
+      final fileCleared =
+          await ChapterContentService.instance.clearBookContents(book);
 
       if (!fileCleared) {
         return false;
@@ -250,11 +245,11 @@ class ChapterContentIntegration {
     Book book,
     List<BookChapter> chapters,
   ) async {
-    final cachedCount = await ChapterContentService.instance
-        .getBookCachedCount(book, chapters);
-    
-    final totalSize = await ChapterContentService.instance
-        .getBookContentSize(book);
+    final cachedCount =
+        await ChapterContentService.instance.getBookCachedCount(book, chapters);
+
+    final totalSize =
+        await ChapterContentService.instance.getBookContentSize(book);
 
     return CacheStats(
       totalChapters: chapters.length,
@@ -276,7 +271,7 @@ class CacheStats {
     required this.totalSizeBytes,
   });
 
-  double get cachePercentage => 
+  double get cachePercentage =>
       totalChapters > 0 ? cachedChapters / totalChapters : 0.0;
 
   String get totalSizeFormatted {

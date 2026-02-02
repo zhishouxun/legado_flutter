@@ -5,23 +5,23 @@ import '../../data/models/book_source.dart';
 import '../../utils/app_log.dart';
 
 /// 基于Isolate的高效率JSON书源解析器
-/// 
+///
 /// 设计目标:
 /// 1. ✅ 在Isolate中执行JSON解析,彻底避免UI线程阻塞
 /// 2. ✅ 支持批量解析,避免内存峰值
 /// 3. ✅ 使用Stream流式返回结果,支持进度反馈
 /// 4. ✅ 完善的错误处理和内存管理
 /// 5. ✅ 与现有BookSource模型完全兼容
-/// 
+///
 /// 符合项目规范: Memory要求"书源JSON文件的解析必须在Dart Isolate中执行"
 class BookSourceParser {
   /// 默认批量大小(每批处理多少个书源)
   static const int defaultBatchSize = 50;
 
   /// 在Isolate中解析书源JSON字符串
-  /// 
+  ///
   /// 适用场景: 一次性解析完整的JSON,不需要进度反馈
-  /// 
+  ///
   /// [jsonString] JSON字符串(可以是数组或单个对象)
   /// 返回: BookSource列表
   static Future<List<BookSource>> parseInBackground(String jsonString) async {
@@ -35,9 +35,9 @@ class BookSourceParser {
   }
 
   /// 在Isolate中批量解析书源JSON(带进度反馈)
-  /// 
+  ///
   /// 适用场景: 大量书源解析,需要实时进度反馈和内存优化
-  /// 
+  ///
   /// `[jsonString]` JSON字符串
   /// `[batchSize]` 每批处理的书源数量(默认50个)
   /// 返回: `Stream<ParseResult>` 流式返回解析结果
@@ -48,7 +48,7 @@ class BookSourceParser {
     try {
       // 第一步: 在Isolate中快速解析JSON结构(只解析到List<Map>)
       final rawData = await compute(_parseJsonStructure, jsonString);
-      
+
       if (rawData.isEmpty) {
         yield ParseResult(
           sources: [],
@@ -65,12 +65,13 @@ class BookSourceParser {
 
       // 第二步: 分批在Isolate中解析BookSource对象
       for (int i = 0; i < rawData.length; i += batchSize) {
-        final end = (i + batchSize < rawData.length) ? i + batchSize : rawData.length;
+        final end =
+            (i + batchSize < rawData.length) ? i + batchSize : rawData.length;
         final batch = rawData.sublist(i, end);
 
         // 在Isolate中解析当前批次
         final batchSources = await compute(_parseBatchBookSources, batch);
-        
+
         parsedCount += batchSources.length;
         final progress = parsedCount / totalCount;
 
@@ -97,9 +98,9 @@ class BookSourceParser {
   }
 
   /// 从Assets加载并在Isolate中解析书源
-  /// 
+  ///
   /// 适用场景: 从assets目录加载默认书源
-  /// 
+  ///
   /// [jsonString] 已经读取的JSON字符串(由外部通过rootBundle.loadString获取)
   /// [onProgress] 进度回调(可选)
   /// 返回: BookSource列表
@@ -127,9 +128,9 @@ class BookSourceParser {
   }
 
   /// 从文件内容字符串解析书源
-  /// 
+  ///
   /// 适用场景: 用户导入本地书源文件
-  /// 
+  ///
   /// [jsonString] 已经读取的JSON字符串(由外部通过File.readAsString获取)
   /// [onProgress] 进度回调(可选)
   /// 返回: BookSource列表
@@ -157,9 +158,9 @@ class BookSourceParser {
   }
 
   // ==================== Isolate执行的顶层/静态函数 ====================
-  
+
   /// Isolate执行函数: 完整解析书源JSON
-  /// 
+  ///
   /// 必须是顶层函数或静态方法才能被compute调用
   static List<BookSource> _parseBookSourcesIsolate(String jsonString) {
     try {
@@ -203,7 +204,7 @@ class BookSourceParser {
   }
 
   /// Isolate执行函数: 仅解析JSON结构到List<Map>
-  /// 
+  ///
   /// 第一阶段: 快速解析JSON结构,不构造BookSource对象
   static List<Map<String, dynamic>> _parseJsonStructure(String jsonString) {
     try {
@@ -227,11 +228,12 @@ class BookSourceParser {
   }
 
   /// Isolate执行函数: 解析一批BookSource对象
-  /// 
+  ///
   /// 第二阶段: 将Map转换为BookSource对象
-  static List<BookSource> _parseBatchBookSources(List<Map<String, dynamic>> batch) {
+  static List<BookSource> _parseBatchBookSources(
+      List<Map<String, dynamic>> batch) {
     final sources = <BookSource>[];
-    
+
     for (final item in batch) {
       try {
         final source = BookSource.fromJson(item);

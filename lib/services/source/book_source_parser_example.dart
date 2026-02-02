@@ -6,7 +6,7 @@ import '../../data/models/book_source.dart';
 import '../../utils/app_log.dart';
 
 /// 基于Isolate的书源解析器使用示例
-/// 
+///
 /// 展示如何在实际场景中使用BookSourceParser
 
 // ==================== 示例1: 从网络导入书源(带进度条) ====================
@@ -37,7 +37,7 @@ class _ImportBookSourcesWithProgressExampleState
       // 第一步: 下载JSON文件(这里需要使用NetworkService)
       // final response = await NetworkService.instance.get(url);
       // final jsonString = response.data as String;
-      
+
       // 示例用的假数据
       const jsonString = '''
       [
@@ -89,7 +89,7 @@ class _ImportBookSourcesWithProgressExampleState
             // 进度条
             LinearProgressIndicator(value: _progress),
             const SizedBox(height: 16),
-            
+
             // 状态文本
             Text(
               _statusText,
@@ -97,10 +97,11 @@ class _ImportBookSourcesWithProgressExampleState
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            
+
             // 导入按钮
             ElevatedButton(
-              onPressed: () => _importFromUrl('https://example.com/sources.json'),
+              onPressed: () =>
+                  _importFromUrl('https://example.com/sources.json'),
               child: const Text('从网络导入书源'),
             ),
           ],
@@ -151,7 +152,8 @@ class BatchParseExample {
     // 批量导入数据库
     if (allSources.isNotEmpty) {
       print('开始导入数据库...');
-      final importResult = await BookSourceService.instance.importBookSources(allSources);
+      final importResult =
+          await BookSourceService.instance.importBookSources(allSources);
       print('✅ 导入完成: ${importResult['imported']}个成功, '
           '${importResult['blocked']}个被过滤');
     }
@@ -169,7 +171,7 @@ class ImportFromFileExample {
       // 第一步: 读取文件内容(需要使用dart:io的File)
       // final file = File(filePath);
       // final jsonString = await file.readAsString();
-      
+
       // 第二步: 使用BookSourceParser解析(内部使用Isolate)
       // final sources = await BookSourceParser.parseFromFileString(
       //   jsonString: jsonString,
@@ -186,7 +188,7 @@ class ImportFromFileExample {
       //   print('✅ 导入完成: ${result['imported']}个成功, '
       //       '${result['blocked']}个被过滤');
       // }
-      
+
       print('✅ 示例代码(需要取消注释)');
     } catch (e) {
       print('❌ 导入失败: $e');
@@ -201,31 +203,31 @@ class PerformanceComparisonExample {
   /// 旧方式: 在UI线程解析(会阻塞)
   static Future<List<BookSource>> parseInUIThread(String jsonString) async {
     final stopwatch = Stopwatch()..start();
-    
+
     // 直接在当前线程解析(危险!)
     final jsonData = jsonDecode(jsonString) as List;
     final sources = jsonData
         .map((item) => BookSource.fromJson(item as Map<String, dynamic>))
         .toList();
-    
+
     stopwatch.stop();
     print('UI线程解析耗时: ${stopwatch.elapsedMilliseconds}ms');
     print('⚠️ 警告: UI线程被阻塞了${stopwatch.elapsedMilliseconds}ms!');
-    
+
     return sources;
   }
 
   /// 新方式: 在Isolate解析(不阻塞UI)
   static Future<List<BookSource>> parseInIsolate(String jsonString) async {
     final stopwatch = Stopwatch()..start();
-    
+
     // 在Isolate中解析(推荐!)
     final sources = await BookSourceParser.parseInBackground(jsonString);
-    
+
     stopwatch.stop();
     print('Isolate解析耗时: ${stopwatch.elapsedMilliseconds}ms');
     print('✅ UI线程未被阻塞!');
-    
+
     return sources;
   }
 
@@ -255,7 +257,7 @@ class ErrorHandlingExample {
     try {
       // 方式1: 使用parseInBackground
       final sources = await BookSourceParser.parseInBackground(jsonString);
-      
+
       if (sources.isEmpty) {
         print('⚠️ 警告: 没有解析到任何书源');
         // 检查JSON格式是否正确

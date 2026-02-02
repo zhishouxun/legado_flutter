@@ -118,3 +118,4 @@ build/web/
 credentials.json
 *.p12
 *.key
+gemini重构建议
